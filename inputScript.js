@@ -25,9 +25,9 @@ function isAlphaNumberString(text) {
 
   (function () {
     window.UpdateMath = function () {
-      var text = document.MathPad.message.value;
-      document.getElementById("MathOutput").innerHTML = Sanitize(text);
-      MathJax.Hub.Queue(["Typeset",MathJax.Hub,"MathOutput"]);
+      var text = document.ScorePad.message.value;
+      document.getElementById("ScoreOutput").innerHTML = Sanitize(text);
+      MathJax.Hub.Queue(["Typeset",MathJax.Hub,"ScoreOutput"]);
     }
     window.Sanitize = function(text) {
       var result = text;
@@ -77,31 +77,31 @@ function isAlphaNumberString(text) {
   }
     function verify(inStrict) {
       var errMsg = "";
-      if (inStrict && (document.MathPad.title.value.replace(/\s|　/g, '') == "")) {
+      if (inStrict && (document.ScorePad.title.value.replace(/\s|　/g, '') == "")) {
         errMsg += "タイトルを30文字以内で入力してください。<br />";
-      } else if (document.MathPad.title.value.length > 30) {
+      } else if (document.ScorePad.title.value.length > 30) {
         errMsg += "タイトルは30文字以内で入力してください。<br />";
       }
-      if (inStrict && (document.MathPad.writer.value.replace(/\s|　/g, '') == "")) {
+      if (inStrict && (document.ScorePad.writer.value.replace(/\s|　/g, '') == "")) {
         errMsg += "名前を20文字以内で入力してください。<br />";
-      } else if (document.MathPad.writer.value.length > 20) {
+      } else if (document.ScorePad.writer.value.length > 20) {
         errMsg += "名前は20文字以内で入力してください。<br />";
       }
-      if (inStrict && (document.MathPad.message.value.replace(/\s|　/g, '') == "")) {
+      if (inStrict && (document.ScorePad.message.value.replace(/\s|　/g, '') == "")) {
         errMsg += "メッセージを20,000文字以内で入力してください。<br />";
-      } else if (document.MathPad.message.value.length > 20000) {
+      } else if (document.ScorePad.message.value.length > 20000) {
         errMsg += "メッセージは20,000文字以内で入力してください。<br />";
       }
-      if (document.MathPad.twitterID.value.length > 30)
+      if (document.ScorePad.twitterID.value.length > 30)
         errMsg += "twitterID は30文字以内で入力してください。<br />";
-      if ((document.MathPad.mixiID.value.length != 0) &&
-          ((document.MathPad.mixiID.value.length > 10) ||
-            !isZealNumber(document.MathPad.mixiID.value.toString())))
+      if ((document.ScorePad.mixiID.value.length != 0) &&
+          ((document.ScorePad.mixiID.value.length > 10) ||
+            !isZealNumber(document.ScorePad.mixiID.value.toString())))
         errMsg += "mixiID は整数10桁以内で入力してください。<br />";
-      if (document.MathPad.facebookID.value.length > 20)
+      if (document.ScorePad.facebookID.value.length > 20)
         errMsg += "facebookID は20文字以内で入力してください。<br />";
-      if (document.MathPad.password.value.length > 20 ||
-          !isAlphaNumberString(document.MathPad.password.value)) {
+      if (document.ScorePad.password.value.length > 20 ||
+          !isAlphaNumberString(document.ScorePad.password.value)) {
         errMsg += "パスワードは半角英数20文字以内で入力してください。<br />";
       }
       document.getElementById("Error").innerHTML = errMsg;
@@ -121,7 +121,7 @@ function isAlphaNumberString(text) {
   function updateMessage() {
     ChangeCount = Math.max(ChangeCount, 1) - 1;
     if (ChangeCount == 0) {
-      var message = encodeURIComponent(document.MathPad.message.value);
+      var message = encodeURIComponent(document.ScorePad.message.value);
       if ((message != preMessage) || changed) {
         changed = false;
         preMessage = message;
@@ -166,13 +166,19 @@ function isAlphaNumberString(text) {
     }
     function formOnPost() {
       document.getElementById('taskId').value = document.getElementById('preTaskId').value;
-      document.MathPad.submit();
+      document.ScorePad.submit();
       return false;
     }
 
 window.onload = function() {
-  document.getElementById('MathPad').onsubmit = function() {return formOnConfirm();};
+  document.getElementById('ScorePad').onsubmit = function() {return formOnConfirm();};
   document.getElementById('previewButton').onclick = function() {previewButtonClick();};
   document.getElementById('isRealTime').onclick = function() {changeRealTime(document.getElementById('isRealTime').checked);};
   document.getElementById('message').onkeyup = function() {messageOnKeyUp();};
+  var abcScores = document.getElementsByName('abcScore');
+  var id = '';
+  for (var i = 0; i < abcScores.length; i++) {
+    id = abcScores[i].getAttribute('id').replace('abcScore', 'notation');
+    ABCJS.renderABC(id, abcScores[i].value);
+  }
 }

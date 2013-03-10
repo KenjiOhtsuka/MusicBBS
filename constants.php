@@ -38,20 +38,23 @@ class GetParam {
   const Mode = 'mode';
 }
 class ConstText {
-  const BBStitle = '数式の書ける数学掲示板';
-  const PasswordSalt = 'ad4GsdbW2hnyDVNUkisighgR78';
+  const BBStitle = '楽譜の書ける音楽掲示板';
+  const PasswordSalt = 'gd6GtpsO2hnyDVNUkungsdwL15';
+  const Keywords = '楽譜,音楽,掲示板,教育,学習,練習,ABC記法';
+  const Description = '楽譜の表示できる音楽掲示板。ABC記法を使って、楽譜を表示することができます。ぜひご活用ください。';
+  const URLPrefix = 'http://nippon.vacau.com/TeXBBS/';
 }
 
 function metaTags($title) {
   $code = '
   <meta charset="utf-8" />
-  <meta name="description" content="数式の表示できる数学掲示板。TeX の文法を使って、数式を表示することができます。ぜひご活用ください。" />';
+  <meta name="description" content="'.ConstText::Description'" />';
   if (isset($title)) {
     $code .= '
-  <meta name="keywords" content="'.$title.',数式,数学,質問,掲示板,問題,教育,学習,練習,TeX,LaTeX" />';
+  <meta name="keywords" content="'.$title.','.ConstText::Keywords.'" />';
   } else {
     $code .= '
-  <meta name="keywords" content="数式,数学,質問,掲示板,問題,教育,学習,練習,TeX,LaTeX" />';
+  <meta name="keywords" content="'.ConstText::Keywords.'" />';
   }
   return $code;
 }
@@ -84,12 +87,12 @@ function createSocialLink($twitter_id = '', $mixi_id = '', $facebook_id = '', $t
   if (!empty($twitter_id)) {
     if (!empty($topic_id)) {
       if (!empty($post_id)) {
-        $url = "http://nippon.vacau.com/TeXBBS/index.php?".GetParam::TopicId."={$topic_id}&".GetParam::PostId."={$post_id}";
+        $url = ConstText::URLPrefix."index.php?".GetParam::TopicId."={$topic_id}&".GetParam::PostId."={$post_id}";
       } else {
-        $url = "http://nippon.vacau.com/TeXBBS/index.php?".GetParam::TopicId."={$topic_id}";
+        $url = ConstText::URLPrefix."index.php?".GetParam::TopicId."={$topic_id}";
       }
     } else {
-      $url = "http://nippon.vacau.com/TeXBBS/index.php";
+      $url = ConstText::URLPrefix."index.php";
     }
     $url = htmlspecialchars($url);
     $title = htmlspecialchars($title);

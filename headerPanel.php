@@ -1,7 +1,7 @@
 <div class="headerPanel">
   <a href="index.php">トップ</a>
   <a href="index.php?<?php echo GetParam::SummeryNumber;?>=1">トピック一覧</a>
-  <a href="training.php">$\TeX$練習</a>
+  <a href="training.php">ABC練習</a>
   <a href="introduction.php">説明</a>
   <a href="creator_profile.php">作者プロフィール</a>
 </div>

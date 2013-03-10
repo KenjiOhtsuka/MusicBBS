@@ -20,6 +20,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       $writer = htmlspecialchars($writer);
       $writer = mysql_real_escape_string($writer);
     }
+    $score = $_POST['abcScore'];
     $message = $_POST['message'];
     if (empty($message) || (mb_strlen($message) > 20000)) {
       $error_message .= "メッセージを20000文字以内で入力してください。<br />";
@@ -68,7 +69,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($error_message == '') {
       switch ($post_pattern) {
         case PostType::Edit:
-          $result = mysql_query("SELECT password FROM BBSposts WHERE topic_id = ".$topic_id." AND id = ".$post_id);
+          $result = mysql_query("SELECT password FROM music_posts WHERE topic_id = ".$topic_id." AND id = ".$post_id);
           if ($result && ($temp = mysql_fetch_array($result))) {
             if (!($temp['password'] == $password)) {
               $error_message .=  "パスワードが違います。<br />";
@@ -80,18 +81,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             break;
           } 
           if ($error_message == '') {
-            $sqlPost = "UPDATE BBSposts SET writer = '{$writer}', title = '{$title}', "
+            $sqlPost = "UPDATE music_posts SET writer = '{$writer}', title = '{$title}', "
                       ."title = '{$title}', message = '{$message}', "
                       ."twitter_id = '{$twitter_id}', mixi_id = '{$mixi_id}', facebook_id = '{$facebook_id}', "
                       ."color = '{$color}', modified = NOW() + INTERVAL 14 HOUR "
                       ."WHERE topic_id = {$topic_id} AND id = {$post_id} AND password = '{$password}'";
-            if (!mysql_query($sqlPost)) {
+            $sqlPostScore = '';
+            if (!empty(preg_replace(/[ 　\r\n]/g, '', $score))) {
+              $sqlPostScore = "UPDATE music_score SET score = {$score} WHERE post_id = {$post_id}";
+            }
+            if (!mysql_query($sqlPost) || (!$empty($sqlPostScore) && !mysql_query($sqlPostScore))) {
               echo mysql_error();
-              $error_mesage .= "更新に失敗しました。<br />";
+              $error_message .= "更新に失敗しました。<br />";
               break;
             }
             if ($error_message == '') {
-              $sqlPost = "UPDATE BBStopics SET updated = now() + INTERVAL 14 HOUR WHERE id = {$topic_id}";
+              $sqlPost = "UPDATE music_topics SET updated = now() + INTERVAL 14 HOUR WHERE id = {$topic_id}";
               if (!mysql_query($sqlPost)) {
                 echo mysql_error();
                 $error_message .= "トピック時刻更新に失敗しました。";
@@ -102,7 +107,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
           break;
 
         case PostType::Reply:
-          $result = mysql_query("SELECT max(id) max_id FROM BBSposts WHERE topic_id = ".$topic_id);
+          $result = mysql_query("SELECT max(id) max_id FROM music_posts WHERE topic_id = ".$topic_id);
           if (!$result) {
             echo mysql_error();
             echo "そのトピックは存在しません。";
@@ -117,18 +122,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
               break;
             }
             
-            $sqlPost = "INSERT INTO BBSposts(id, topic_id, writer, title, message, "
+            // post message
+            $sqlPost = "INSERT INTO music_posts(id, topic_id, writer, title, message, "
                       ."twitter_id, mixi_id, facebook_id, url, color, password, "
                       ."created) ";
             $sqlPost .= "VALUES({$post_id}, {$topic_id}, '{$writer}', '{$title}', '{$message}', "
                       ."'{$twitter_id}', '{$mixi_id}', '{$facebook_id}', '{$url}', '{$color}', "
                       ."'{$password}', now() + INTERVAL 14 HOUR)";
-            if (!mysql_query($sqlPost)) {
+            // post score
+            $sqlPostScore = '';
+            if (!empty(preg_replace(/[ 　\r\n]/g, '', $score))) {
+              $sqlPostScore = "INSERT INTO music_scores(post_id, score)"
+                             ."VALUES({$post_id}, {$score})";
+            }
+            if (!mysql_query($sqlPost) || (!empty($sqlPostScore) && !mysql_query($sqlPostScore))) {
               echo mysql_error();
               $error_message .= "投稿に失敗しました。<br />";
               break;
             }
-            $sqlPost = "UPDATE BBStopics SET updated = now() + INTERVAL 14 HOUR WHERE id = {$topic_id}";
+            $sqlPost = "UPDATE music_topics SET updated = now() + INTERVAL 14 HOUR WHERE id = {$topic_id}";
             if (!mysql_query($sqlPost)) {
               echo mysql_error();
               $error_message .= "トピック時刻更新に失敗しました。<br />";
@@ -138,12 +150,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
           break;
 
         case PostType::Topic:
-          if (!mysql_query("INSERT INTO BBStopics(updated) VALUES(now() + INTERVAL 14 HOUR)")) {
+          if (!mysql_query("INSERT INTO music_topics(updated) VALUES(now() + INTERVAL 14 HOUR)")) {
             //die(mysql_error());
             $error_message .= "データベースエラーが発生しました。";
           }
           if ($error_message == '') {
-            $result = mysql_query("SELECT max(id) max_id FROM BBStopics");
+            $result = mysql_query("SELECT max(id) max_id FROM music_topics");
             $topic_id = 0;
             if (!$result) {
               //echo mysql_error();
@@ -156,15 +168,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $topic_id = $temp['max_id'];
               }
             }
-            $sqlPost = "INSERT INTO BBSposts(id, topic_id, writer, title, message, "
+            $sqlPost = "INSERT INTO music_posts(id, topic_id, writer, title, message, "
                       ."twitter_id, mixi_id, facebook_id, url, color, password, "
                       ."created) ";
             $sqlPost .= "VALUES(0, {$topic_id}, '{$writer}', '{$title}', '{$message}', "
                       ."'{$twitter_id}', '{$mixi_id}', '{$facebook_id}', '{$url}', '{$color}', "
                       ."'{$password}', now() + INTERVAL 14 HOUR)";
-            if (!mysql_query($sqlPost)) {
-              echo mysql_error();
-              mysql_query("DELETE FROM BBStopics WHERE id = {$topic_id}");
+            $sqlPostScore = '';
+            if (!empty(preg_replace(/[ 　\r\n]/g, '', $score))) {
+              $sqlPostScore = "INSERT INTO music_scores(post_id, score)"
+                             ."VALUES({$post_id}, {$score})";
+            }
+            if (!mysql_query($sqlPost) || (!empty($sqlPostScore) && !mysql_query($sqlPostScore))) {
+              mysql_query("DELETE FROM music_topics WHERE id = {$topic_id}");
               echo mysql_error();
               break;
             }
@@ -194,7 +210,7 @@ switch ($input_type) {
       $post_id = 0;
     }
     
-    $sqlForm = "SELECT writer, title, message, twitter_id, CASE mixi_id WHEN 0 THEN '' ELSE mixi_id END mixi_id, facebook_id, color FROM BBSposts "
+    $sqlForm = "SELECT writer, title, message, twitter_id, CASE mixi_id WHEN 0 THEN '' ELSE mixi_id END mixi_id, facebook_id, color FROM music_posts "
               ."WHERE topic_id = {$topic_id} AND id = {$post_id}";
     $rowsForm = mysql_query($sqlForm);
     if (!$rowsForm) {
@@ -214,7 +230,7 @@ switch ($input_type) {
     $post_id = $_GET[GetParam::PostId];
     $preMessage = "\n\n---- No. {$topic_id} Comment {$post_id} ----\n";
       
-    $sqlForm = "SELECT title, message FROM BBSposts "
+    $sqlForm = "SELECT title, message FROM music_posts "
               ."WHERE topic_id = {$topic_id} AND id = {$post_id}";
     $rowsForm = mysql_query($sqlForm);
     if (!$rowsForm) {
@@ -234,7 +250,7 @@ switch ($input_type) {
     $preMessage = "\n\n------------ No. {$topic_id} ------------\n";
     $post_id = 0;
       
-    $sqlForm = "SELECT title, message FROM BBSposts "
+    $sqlForm = "SELECT title, message FROM music_posts "
               ."WHERE topic_id = {$topic_id} AND id = {$post_id}";
     $rowsForm = mysql_query($sqlForm);
     if (!$rowsForm) {

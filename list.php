@@ -9,7 +9,7 @@ switch ($pattern) {
       $n = ($page_number - 1) * ConstParam::BoardTopicCount;
     }
 
-    $sqlHead = "SELECT count(BBStopics.id) id_count FROM BBStopics";
+    $sqlHead = "SELECT count(music_topics.id) id_count FROM music_topics";
     $rowsHead = mysql_query($sqlHead);
     if (!$rowsHead) {
       die(mysql_error());
@@ -24,17 +24,22 @@ switch ($pattern) {
     echo $pager;
     echo "<hr />";
 
+    // get topic top posts with comments count
     $sqlHead = "SELECT postsA.topic_id, postsA.writer,"
               ."postsA.title, postsA.message, postsA.twitter_id,"
               ."postsA.mixi_id, postsA.facebook_id, postsA.url,"
-              ."postsA.color, postsA.created, postsA.modified, postsC.id_count ";
-    $sqlHead .= "FROM (SELECT id, updated FROM BBStopics "
-               ."ORDER BY updated DESC LIMIT ".(string)$n.", ".(string)ConstParam::BoardTopicCount.") "
-               ."BBStopics "
-               ."JOIN BBSposts postsA ON postsA.topic_id = BBStopics.id AND postsA.id = 0 "
-               ."JOIN (SELECT postsB.topic_id topic_id, count(postsB.id) id_count FROM BBSposts postsB GROUP BY postsB.topic_id) postsC "
-               ."  ON postsC.topic_id = BBStopics.id "
-               ."ORDER BY BBStopics.updated DESC";
+              ."postsA.color, postsA.created, postsA.modified, ms.score, postsC.id_count ";
+    $sqlHead .= "FROM (SELECT id, updated FROM music_topics "
+               ."       ORDER BY updated DESC LIMIT ".(string)$n.", ".(string)ConstParam::BoardTopicCount.") "
+               ."     music_topics "
+               ."JOIN music_posts postsA ON postsA.topic_id = music_topics.id AND postsA.id = 0 "
+               ."JOIN (SELECT postsB.topic_id topic_id, count(postsB.id) id_count "
+               ."        FROM music_posts postsB"
+               ."       GROUP BY postsB.topic_id) postsC "
+               ."  ON postsC.topic_id = music_topics.id "
+               ."LEFT JOIN music_scores ms "
+               ."  ON ms.post_id = postsA.id "
+               ."ORDER BY music_topics.updated DESC";
 
     $rowsHead = mysql_query($sqlHead, $myCon);
     if (!$rowsHead) {
@@ -44,15 +49,17 @@ switch ($pattern) {
       echo "<div class=\"topic\">";
       echo createTopicHtml($rowHead['topic_id'], $rowHead['title'], $rowHead['writer'], 
                          $rowHead['twitter_id'], $rowHead['mixi_id'], $rowHead['facebook_id'], 
-                         $rowHead['color'], nl2br($rowHead['message']), $rowHead['created'], $rowHead['modified']);
+                         $rowHead['color'], nl2br($rowHead['message']), $rowHead['created'], $rowHead['modified'],
+                         $rowHead['score']);
 
-      $sqlPost = "SELECT BBSposts.id post_id, BBSposts.writer,"
-                ."BBSposts.title, BBSposts.message, BBSposts.twitter_id,"
-                ."BBSposts.mixi_id, BBSposts.facebook_id, BBSposts.url,"
-                ."BBSposts.color, BBSposts.created, BBSposts.modified ";
-      $sqlPost .= "FROM BBSposts WHERE BBSposts.topic_id = {$rowHead['topic_id']} "
-                 ."AND BBSposts.id != 0 "
-                 ."ORDER BY BBSposts.id DESC LIMIT 0, ".(string)ConstParam::BoardTopicCommentCount;
+      // sql to get comments
+      $sqlPost = "SELECT mp.id post_id, mp.writer, mp.title, mp.message, mp.twitter_id,"
+                ."mp.mixi_id, mp.facebook_id, mp.url, mp.color, mp.created, mp.modified,"
+                ."ms.score ";
+      $sqlPost .= "FROM music_posts mp "
+                 ."LEFT JOIN music_scores ms ON ms.post_id = mp.id "
+                 ."WHERE mp.topic_id = {$rowHead['topic_id']} AND mp.id != 0 "
+                 ."ORDER BY mp.id DESC LIMIT 0, ".(string)ConstParam::BoardTopicCommentCount;
       $rowsPost = mysql_query($sqlPost, $myCon);
       if (!$rowsPost) {
         die(mysql_error());
@@ -61,7 +68,8 @@ switch ($pattern) {
       while($rowPost = mysql_fetch_array($rowsPost)) {
         $html = createCommentHtml($rowHead['topic_id'], $rowPost['post_id'], $rowPost['title'], $rowPost['writer'], 
                                $rowPost['twitter_id'], $rowPost['mixi_id'], $rowPost['facebook_id'],
-                               $rowPost['color'], nl2br($rowPost['message']), $rowPost['created'], $rowPost['modified'])
+                               $rowPost['color'], nl2br($rowPost['message']), $rowPost['created'], $rowPost['modified'],
+                               $rowPost['score'])
               .$html;
       }
       if ($rowHead['id_count'] > ConstParam::BoardTopicCommentCount + 1) {
@@ -80,12 +88,12 @@ switch ($pattern) {
   case PageType::Comment:
     $topic_id = (int)$_GET[GetParam::TopicId];
     /* create pager - start - */
-    $sqlHead = "SELECT count(BBSposts.id) id_count FROM BBSposts WHERE BBSposts.topic_id = {$topic_id}";
+    $sqlHead = "SELECT count(mp.id) id_count FROM music_posts mp WHERE mp.topic_id = {$topic_id}";
     $rowsHead = mysql_query($sqlHead);
     if (!$rowsHead) {
       die(mysql_error());
     }
-    $sqlPost = "SELECT count(BBSposts.id) id_count FROM BBSposts WHERE BBSposts.topic_id = {$topic_id} AND id BETWEEN 1 AND {$_GET[GetParam::PostId]}";
+    $sqlPost = "SELECT count(mp.id) id_count FROM music_posts mp WHERE mp.topic_id = {$topic_id} AND id BETWEEN 1 AND {$_GET[GetParam::PostId]}";
     $rowsPost = mysql_query($sqlPost);
     if (!$rowsPost) {
       die(mysql_error());
@@ -106,13 +114,14 @@ switch ($pattern) {
     echo $pager;
     echo "<hr />";
 
-    $sqlHead = "SELECT BBSposts.topic_id, BBSposts.id post_id, BBSposts.writer,"
-              ."BBSposts.title, BBSposts.message, BBSposts.twitter_id,"
-              ."BBSposts.mixi_id, BBSposts.facebook_id, BBSposts.url,"
-              ."BBSposts.color, BBSposts.created, BBSposts.modified ";
-    $sqlHead .= "FROM BBStopics "
-               ."JOIN BBSposts ON BBSposts.topic_id = BBStopics.id AND BBSposts.id = 0 "
-               ."WHERE BBStopics.id = {$topic_id}";
+    $sqlHead = "SELECT mp.topic_id, mp.id post_id, mp.writer,"
+              ."mp.title, mp.message, mp.twitter_id,"
+              ."mp.mixi_id, mp.facebook_id, mp.url,"
+              ."mp.color, mp.created, mp.modified, ms.score ";
+    $sqlHead .= "FROM music_topics mt "
+               ."JOIN music_posts mp ON mp.topic_id = mt.id AND mp.id = 0 "
+               ."LEFT JOIN music_score ms ON ms.post_id = mp.id "
+               ."WHERE mt.id = {$topic_id}";
     $rowsHead = mysql_query($sqlHead, $myCon);
     if (!$rowsHead) {
       die(mysql_error());
@@ -121,14 +130,15 @@ switch ($pattern) {
       echo "  <div class=\"topic\">";
       echo createTopicHtml($topic_id, $rowHead['title'], $rowHead['writer'], 
                          $rowHead['twitter_id'], $rowHead['mixi_id'], $rowHead['facebook_id'], 
-                         $rowHead['color'], nl2br($rowHead['message']), $rowHead['created'], $rowHead['modified']);
-      $sqlPost = "SELECT BBSposts.id post_id, BBSposts.writer,"
-                ."BBSposts.title, BBSposts.message, BBSposts.twitter_id,"
-                ."BBSposts.mixi_id, BBSposts.facebook_id, BBSposts.url,"
-                ."BBSposts.color, BBSposts.created, BBSposts.modified ";
-      $sqlPost .= "FROM BBSposts WHERE BBSposts.topic_id = {$topic_id} "
-                 ."AND BBSposts.id != 0 "
-                 ."ORDER BY BBSposts.id DESC LIMIT 0, ".(string)ConstParam::TopicCommentCount;
+                         $rowHead['color'], nl2br($rowHead['message']), $rowHead['created'], $rowHead['modified'],
+                         nl2br($rowHead['score']));
+      $sqlPost = "SELECT mp.id post_id, mp.writer, mp.title, mp.message, mp.twitter_id,"
+                ."mp.mixi_id, mp.facebook_id, mp.url, mp.color, mp.created, mp.modified,"
+                ."ms.score ";
+      $sqlPost .= "FROM music_posts mp "
+                 ."LEFT JOIN music_scores ms ON ms.post_id = mp.id "
+                 ."WHERE mp.topic_id = {$topic_id} AND mp.id != 0 "
+                 ."ORDER BY mp.id DESC LIMIT 0, ".(string)ConstParam::TopicCommentCount;
       $rowsPost = mysql_query($sqlPost, $myCon);
       if (!$rowsPost) {
         die(mysql_error());
@@ -139,7 +149,8 @@ switch ($pattern) {
         $post_id = $rowPost['post_id'];
         $html = createCommentHtml($rowHead['topic_id'], $rowPost['post_id'], $rowPost['title'], $rowPost['writer'], 
                                $rowPost['twitter_id'], $rowPost['mixi_id'], $rowPost['facebook_id'],
-                               $rowPost['color'], nl2br($rowPost['message']), $rowPost['created'], $rowPost['modified'])
+                               $rowPost['color'], nl2br($rowPost['message']), $rowPost['created'], $rowPost['modified'],
+                               nl2br($rowPost['score']))
                .$html;
       }
       echo $html;
@@ -150,12 +161,12 @@ switch ($pattern) {
     }
 
     echo "<hr />";
-    $sqlHead = "SELECT count(BBSposts.id) id_count FROM BBSposts WHERE BBSposts.topic_id = {$topic_id}";
+    $sqlHead = "SELECT count(mp.id) id_count FROM music_posts mp WHERE mp.topic_id = {$topic_id}";
     $rowsHead = mysql_query($sqlHead);
     if (!$rowsHead) {
       die(mysql_error());
     }
-    $sqlPost = "SELECT count(BBSposts.id) id_count FROM BBSposts WHERE BBSposts.topic_id = {$topic_id} AND id BETWEEN 1 AND {$_GET[GetParam::PostId]}";
+    $sqlPost = "SELECT count(mp.id) id_count FROM music_posts mp WHERE mp.topic_id = {$topic_id} AND id BETWEEN 1 AND {$_GET[GetParam::PostId]}";
     $rowsPost = mysql_query($sqlPost);
     if (!$rowsPost) {
       die(mysql_error());
@@ -183,7 +194,7 @@ switch ($pattern) {
       $page_number = 1;
     }
 
-    $sqlPost = "SELECT count(BBSposts.id) id_count FROM BBSposts WHERE BBSposts.topic_id = {$topic_id}";
+    $sqlPost = "SELECT count(music_posts.id) id_count FROM music_posts WHERE music_posts.topic_id = {$topic_id}";
     $rowsPost = mysql_query($sqlPost);
     if (!$rowsPost) {
       die(mysql_error());
@@ -199,13 +210,12 @@ switch ($pattern) {
     echo $pager;
     echo "<hr />";
 
-    $sqlHead = "SELECT BBSposts.topic_id, BBSposts.id post_id, BBSposts.writer,"
-              ."BBSposts.title, BBSposts.message, BBSposts.twitter_id,"
-              ."BBSposts.mixi_id, BBSposts.facebook_id, BBSposts.url,"
-              ."BBSposts.color, BBSposts.created, BBSposts.modified ";
-    $sqlHead .= "FROM BBStopics "
-               ."JOIN BBSposts ON BBSposts.topic_id = BBStopics.id AND BBSposts.id = 0 "
-               ."WHERE BBStopics.id = {$topic_id}";
+    $sqlHead = "SELECT mp.topic_id, mp.id post_id, mp.writer, mp.title, mp.message, mp.twitter_id,"
+              ."mp.mixi_id, mp.facebook_id, mp.url, mp.color, mp.created, mp.modified, ms.score ";
+    $sqlHead .= "FROM music_topics mt "
+               ."JOIN music_posts mp ON mp.topic_id = mt.id AND mp.id = 0 "
+               ."LEFT JOIN music_scores ms ON ms.post_id = ms.id "
+               ."WHERE mt.id = {$topic_id}";
 
     $rowsHead = mysql_query($sqlHead, $myCon);
     if (!$rowsHead) {
@@ -217,15 +227,14 @@ switch ($pattern) {
       echo "  <div class=\"topic\">";
       echo createTopicHtml($rowHead['topic_id'], $rowHead['title'], $rowHead['writer'], 
                          $rowHead['twitter_id'], $rowHead['mixi_id'], $rowHead['facebook_id'], 
-                         $rowHead['color'], nl2br($rowHead['message']), $rowHead['created'], $rowHead['modified']);
+                         $rowHead['color'], nl2br($rowHead['message']), $rowHead['created'], $rowHead['modified'],
+                         $rowHead['score']);
 
-      $sqlPost = "SELECT BBSposts.id post_id, BBSposts.writer,"
-                ."BBSposts.title, BBSposts.message, BBSposts.twitter_id,"
-                ."BBSposts.mixi_id, BBSposts.facebook_id, BBSposts.url,"
-                ."BBSposts.color, BBSposts.created, BBSposts.modified ";
-      $sqlPost .= "FROM BBSposts WHERE BBSposts.topic_id = {$topic_id} "
-                 ."AND BBSposts.id != 0 "
-                 ."ORDER BY BBSposts.id DESC LIMIT {$n}, ".(string)ConstParam::TopicCommentCount;
+      $sqlPost = "SELECT mp.id post_id, mp.writer, mp.title, mp.message, mp.twitter_id,"
+                ."mp.mixi_id, mp.facebook_id, mp.url, mp.color, mp.created, mp.modified, ms.score ";
+      $sqlPost .= "FROM music_posts mp WHERE mp.topic_id = {$topic_id} AND mp.id != 0 "
+                 ."LEFT JOIN music_scores ms ON ms.post_id = mp.id "
+                 ."ORDER BY mp.id DESC LIMIT {$n}, ".(string)ConstParam::TopicCommentCount;
       $rowsPost = mysql_query($sqlPost, $myCon);
       if (!$rowsPost) {
         die(mysql_error());
@@ -236,7 +245,8 @@ switch ($pattern) {
         $post_id = $rowPost['post_id'];
         $html = createCommentHtml($topic_id, $rowPost['post_id'], $rowPost['title'], $rowPost['writer'], 
                                $rowPost['twitter_id'], $rowPost['mixi_id'], $rowPost['facebook_id'],
-                               $rowPost['color'], nl2br($rowPost['message']), $rowPost['created'], $rowPost['modified'])
+                               $rowPost['color'], nl2br($rowPost['message']), $rowPost['created'], $rowPost['modified'],
+                               $rowPost['score'])
               .$html;
       }
       if ($post_id != 1) {
@@ -258,7 +268,7 @@ switch ($pattern) {
     $page_number = $_GET['summery_number'];
     
     /* create pager - start - */
-    $sqlHead = "SELECT count(BBStopics.id) id_count FROM BBStopics";
+    $sqlHead = "SELECT count(mt.id) id_count FROM music_topics mt";
     $rowsHead = mysql_query($sqlHead);
     if (!$rowsHead) {
       die(mysql_error());
@@ -276,14 +286,14 @@ switch ($pattern) {
     echo "<hr />";
 
     $n = ($page_number - 1) * ConstParam::SummeryCount;
-    $sqlHead = "SELECT BBStopics.id, A.title title, count(B.id) - 1 posts_count, "
-              ."BBStopics.updated ";
-    $sqlHead .= "FROM (SELECT id, updated FROM BBStopics "
-               ."ORDER BY updated DESC LIMIT ".(string)$n.", ".(string)ConstParam::SummeryCount.") "
-               ."BBStopics "
-               ."JOIN BBSposts A ON A.topic_id = BBStopics.id AND A.id = 0 "
-               ."JOIN BBSposts B ON B.topic_id = BBStopics.id ";
-    $sqlHead .= "GROUP BY BBStopics.id ORDER BY BBStopics.updated DESC";
+    $sqlHead = "SELECT mt.id, A.title title, count(B.id) - 1 posts_count, "
+              ."mt.updated ";
+    $sqlHead .= "FROM (SELECT id, updated FROM music_topics "
+               ."      ORDER BY updated DESC LIMIT ".(string)$n.", ".(string)ConstParam::SummeryCount.") "
+               ."music_topics mt "
+               ."JOIN music_posts A ON A.topic_id = mt.id AND A.id = 0 "
+               ."JOIN music_posts B ON B.topic_id = mt.id ";
+    $sqlHead .= "GROUP BY mt.id ORDER BY mt.updated DESC";
     $rowsHead = mysql_query($sqlHead, $myCon);
     if (!$rowsHead) {
       die(mysql_error());

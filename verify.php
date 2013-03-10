@@ -22,11 +22,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
   $topic_id = htmlspecialchars($_POST["topic_id"]);
   $post_id = htmlspecialchars($_POST["post_id"]);
 
-if ($_POST['mode'] != ModeType::Edit) {
-  $header_message = '<p>下記内容で更新します。よろしければ「更新する」ボタンをクリックしてください。<br />(twitter のリンクは、更新後に再構成されます。)</p>';
-} else {
-  $header_message = '<p>下記内容で投稿します。よろしければ「投稿する」ボタンをクリックしてください。<br />(twitter のリンクは、投稿後に再構成されます。)</p>';
-} 
+  $button_text = '';
+  if ($_POST['mode'] != ModeType::Edit) {
+    $button_text = '更新する';
+    $header_message = '<p>下記内容で更新します。よろしければ「更新する」ボタンをクリックしてください。<br />(twitter のリンクは、更新後に再構成されます。)</p>';
+  } else {
+    $button_text = '投稿する';
+    $header_message = '<p>下記内容で投稿します。よろしければ「投稿する」ボタンをクリックしてください。<br />(twitter のリンクは、投稿後に再構成されます。)</p>';
+  } 
 echo <<<EOT
   {$header_message}
   <h2>{$title}</h2>
@@ -41,7 +44,7 @@ echo <<<EOT
   <hr />
   <div style="color:{$color};clear:both;" id="verifyPreview" name="verifyPreview">{$message}</div>
   <form action="{$_SERVER['PHP_SELF']}" onsubmit="return formOnPost();" method="POST" name="ConfirmDialog" id="ConfirmDialog">
-    <input type="submit" value="投稿する" />
+    <input type="submit" value="{$button_text}" />
     <input type="reset" value="キャンセル" onclick="cancelOnClick();" />
     <input type="hidden" value="{$taskId}" name="preTaskId" id="preTaskId" />
   </form>
