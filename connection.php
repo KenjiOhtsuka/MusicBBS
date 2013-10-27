@@ -1,10 +1,10 @@
 <?php
 session_start();
-  $DB = "MyNippon";// 'a5697723_AIOdb';
+  $DB = "dbnamen";
   $myCon = mysql_connect(
-    'localhost', //'mysql15.000webhost.com',
-    'root', //'a5697723_owner',
-    'pXo0qr384' //'Apls9534selw'
+    'localhost',
+    'root', 
+    'password'
   );
   if ($myCon == false) die("Connection failed.");
   if (!mysql_select_db($DB, $myCon)) die("Selection failed.");
