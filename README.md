@@ -6,3 +6,5 @@ MusicBBS
 PHPで動きます。
 
 http://nippon.vacau.com/MusicBBS/
+
+楽譜はabc記法で書きます。
