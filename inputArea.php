@@ -21,6 +21,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       $writer = mysql_real_escape_string($writer);
     }
     $score = $_POST['abcScore'];
+    $score = mysql_real_escape_string($score);
     $message = $_POST['message'];
     if (empty($message) || (mb_strlen($message) > 20000)) {
       $error_message .= "メッセージを20000文字以内で入力してください。<br />";
@@ -41,8 +42,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $error_message .= "mixiIDは10桁以内の整数値で入力してください。<br />";
       }
     }
-    $facebook_id = htmlspecialchars($_POST['facebookID']);
-    $facebook_id = mysql_real_escape_string($facebook_id);
     //$url = htmlspecialchars($_POST['url']);
     $color = htmlspecialchars($_POST['color']);
     $password = $_POST['password'];
@@ -87,8 +86,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                       ."color = '{$color}', modified = NOW() + INTERVAL 14 HOUR "
                       ."WHERE topic_id = {$topic_id} AND id = {$post_id} AND password = '{$password}'";
             $sqlPostScore = '';
-            if (!empty(preg_replace(/[ 　\r\n]/g, '', $score))) {
-              $sqlPostScore = "UPDATE music_score SET score = {$score} WHERE post_id = {$post_id}";
+            if (strlen(preg_replace('/[ 　\r\n]/g', '', $score)) != 0) {
+              $sqlPostScore = "UPDATE music_score SET score = '{$score}' WHERE post_id = {$post_id}";
             }
             if (!mysql_query($sqlPost) || (!$empty($sqlPostScore) && !mysql_query($sqlPostScore))) {
               echo mysql_error();
@@ -131,9 +130,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                       ."'{$password}', now() + INTERVAL 14 HOUR)";
             // post score
             $sqlPostScore = '';
-            if (!empty(preg_replace(/[ 　\r\n]/g, '', $score))) {
-              $sqlPostScore = "INSERT INTO music_scores(post_id, score)"
-                             ."VALUES({$post_id}, {$score})";
+            if (strlen(preg_replace("[ 　\r\n]", '', $score)) != 0) {
+              $sqlPostScore = "INSERT INTO music_scores(topic_id, post_id, score)"
+                             ."VALUES({$topic_id}, {$post_id}, '{$score}')";
             }
             if (!mysql_query($sqlPost) || (!empty($sqlPostScore) && !mysql_query($sqlPostScore))) {
               echo mysql_error();
@@ -175,12 +174,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                       ."'{$twitter_id}', '{$mixi_id}', '{$facebook_id}', '{$url}', '{$color}', "
                       ."'{$password}', now() + INTERVAL 14 HOUR)";
             $sqlPostScore = '';
-            if (!empty(preg_replace(/[ 　\r\n]/g, '', $score))) {
-              $sqlPostScore = "INSERT INTO music_scores(post_id, score)"
-                             ."VALUES({$post_id}, {$score})";
+            if (strlen(ereg_replace("[ 　\r\n]", '', $score)) != 0) {
+              $sqlPostScore = "INSERT INTO music_scores(topic_id, post_id, score, `order`) "
+                             ."VALUES({$topic_id}, 0, '{$score}', 1)";
             }
+            //mysql_query("INSERT INTO debugs VALUES('".ereg_replace("[ 　\r\n]", '', $score)."')");
+            mysql_query("INSERT INTO debugs VALUES('".mysql_real_escape_string($sqlPostScore)."')");
             if (!mysql_query($sqlPost) || (!empty($sqlPostScore) && !mysql_query($sqlPostScore))) {
               mysql_query("DELETE FROM music_topics WHERE id = {$topic_id}");
+              mysql_query("DELETE FROM music_posts WHERE topic_id = {$topic_id}");
               echo mysql_error();
               break;
             }
@@ -199,7 +201,7 @@ if ($error_message != '') {
 switch ($input_type) {
   case InputType::None:
     echo outputForm('index.php', '', $writer, '', $color,
-                   $mixi_id, $tweeter_id, $facebook_id);
+                   $mixi_id, $twitter_id, $facebook_id);
     break;
 
   case InputType::Edit:

@@ -24,25 +24,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
   $button_text = '';
   if ($_POST['mode'] != ModeType::Edit) {
-    $button_text = '更新する';
-    $header_message = '<p>下記内容で更新します。よろしければ「更新する」ボタンをクリックしてください。<br />(twitter のリンクは、更新後に再構成されます。)</p>';
-  } else {
     $button_text = '投稿する';
-    $header_message = '<p>下記内容で投稿します。よろしければ「投稿する」ボタンをクリックしてください。<br />(twitter のリンクは、投稿後に再構成されます。)</p>';
+    $header_message = '<p>投稿します。よろしいですか？</p>';
+  } else {
+    $button_text = '更新する';
+    $header_message = '<p>更新します。よろしいですか？</p>';
   } 
 echo <<<EOT
   {$header_message}
-  <h2>{$title}</h2>
-  <div>
-    <div style="float:right;">
-EOT;
-  echo createSocialLink($twitter_id, $mixi_id, $facebook_id, $title, $topic_id);
-echo <<<EOT
-    </div>
-    <div>By {$writer}</div>
-  </div>
-  <hr />
-  <div style="color:{$color};clear:both;" id="verifyPreview" name="verifyPreview">{$message}</div>
   <form action="{$_SERVER['PHP_SELF']}" onsubmit="return formOnPost();" method="POST" name="ConfirmDialog" id="ConfirmDialog">
     <input type="submit" value="{$button_text}" />
     <input type="reset" value="キャンセル" onclick="cancelOnClick();" />

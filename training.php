@@ -1,22 +1,20 @@
 <?php
   require_once('constants.php');
 ?>
+<?php echo '<?xml version="1.0" encoding="UTF-8" ?>'; ?>
 <!DOCTYPE html>
 <html>
 <head>
-<title>TeX 練習場 - <?php echo ConstText::BBStitle; ?></title>
+<meta charset="UTF-8" />
+<title>ABC記法 練習場 - <?php echo ConstText::BBStitle; ?></title>
 <?php
-  include('meta.php');
+//  include('meta.php');
   include('headerScript.php');
   include('css.php');
 ?>
-<!--
-<script type="text/javascript" src="mathjax/MathJax.js"></script>
-<script type="text/javascript" src="mathjax/MathJax.js?config=TeX-AMS_HTML-full"></script>
--->
 </head>
 <body>
-<h1><?php echo ConstText::BBStitle; ?> - TeX 練習場</h1>
+<h1><?php echo ConstText::BBStitle; ?> - ABC記法 練習場</h1>
 <?php
   include('headerPanel.php');
 ?>
@@ -35,8 +33,7 @@ var preMessage = "";
 window.UpdateMath = function () {
 var text = document.getElementById('InputTextarea').value;
 text = Sanitize(text);
-document.getElementById("TrainMathOutput").innerHTML = text;
-MathJax.Hub.Queue(["Typeset",MathJax.Hub,"TrainMathOutput"]);
+//document.getElementById("TrainMathOutput").innerHTML = text;
 }
   window.changeRealTime = function (isRealTime) {
     if (isRealTime) {
@@ -62,60 +59,37 @@ MathJax.Hub.Queue(["Typeset",MathJax.Hub,"TrainMathOutput"]);
 </script>
 
 <?php
-  $title = "$\TeX$ 練習場";
-  $message = "ここでは、TeX の練習ができます。<br />";
-  $message .= "リアルタイムプレビューにチェックを入れると、テキストを編集する度に、随時結果が右側に表示されます。ただしその場合、処理が増えるためレスポンスが遅くなります。<br />";
-  $message .= "表示されている数式を右クリックして Show source を選択すると、 $\TeX$ での数式の書き方が表示されます。<br />";
+  $title = "ABC記法 練習場";
+  $message = "ここでは、ABC記法 の練習ができます。<br />";
+  //$message .= "リアルタイムプレビューにチェックを入れると、テキストを編集する度に、随時結果が表示されます。ただしその場合、処理が増えるためレスポンスが遅くなります。<br />";
   $message .= "javascript を使用しています。";
   echo createIntroductionHtml($title, '', '', '', 'black', $message);
 ?>
-
-<table id="EditTable">
-<tbody>
-<tr><td colspan="2">
-<div id="EditPanel">
-  <form action="">
-    <input type="button" id="previewButton" disabled="disabled" value="プレビュー" onclick="UpdateMath();" />
-    <input type="checkbox" id="isRealTime" checked="checked" name="isRealTime" value="1" onclick="changeRealTime(this.checked);" />リアルタイムプレビュー<br />
-  </form>
+<div class="inputArea">
+<textarea cols="80" rows="15" id="InputTextarea" name="InputTextarea" onkeyup="messageOnKeyUp();">
+X:1
+T:Night
+C:Sample Composer
+M:12/8
+K:Am
+V:1 clef=treble+8
+E3|(AcB) (AcB) (AcB) !tenuto!.e2 e|def edB (c2B) A2E|(AcB) (AcB) (AcB) .!tenuto!e2 e|def edB (c2B) A2e|
+.d z c.B z c.A z c.e z e|.d z c.B z c.A z2 E3|(AcB) (AcB) (AcB) !tenuto!.e2 e|def edB (c2B) A2E|
+(AcB) (AcB) (AcB) !tenuto!.e2 e|def edB (c2B) A2e|.d z c.B z c.A z c.e z e|.d z c.B z c.a z2 z3|]
+V:2 clef=bass
+z3|z12|z12|z12|z12|
+z12|z6z3 z2 E,,|.A,,3 .E,,3 .A,,3 .E,3 |.D,3 .B,,3 .C,3 .A,,2 E,,|
+.A,,3 .E,,3 .A,,3 .E,3 |.D,3 .B,,3 .C,3 .A,,2 E,|.F, z E,.D, z F,.E, z E,.A,, z C,|.B,, z A,,.G,, z A,,.A,, z2 z3|]</textarea>
 </div>
-</td></tr>
-<tr><td>
-<div id="TrainMathInput">
-<textarea cols="50" rows="30" id="InputTextarea" name="InputTextarea" onkeyup="messageOnKeyUp();">
-$$f(x) = x^2 + ax$$
-\[
- \left\{  
-         \begin{array}{c c l}  
-           z & = & rx'+sy' \\  
-           y & = & ts'+uy'  
-         \end{array}  
- \right.
-\]
-$x \in \mathbb{N}$ なので $x \div 3 \neq 2$.
-
-</textarea>
+<div id="TrainABCOutput" style="background-color:white;">
 </div>
-</td>
-<td>
-<div id="TrainMathOutput">
-$$f(x) = x^2 + ax$$ <br />
-\[
- \left\{  
-         \begin{array}{c c l}  
-           z & = & rx'+sy' \\  
-           y & = & ts'+uy'  
-         \end{array}  
- \right.
-\]
-<br />
-$x \in \mathbb{N}$ なので $x \div 3 \neq 2$.
-</div>
-</td></tr>
-</body>
-</table>
-
-</body>
+<div id="midi"></div>
+<div id="warnings"></div>
+<script type="text/javascript">
+	window.onload = function() {
+		abc_editor = new ABCJS.Editor("InputTextarea", { paper_id: "TrainABCOutput", midi_id:"midi", warnings_id:"warnings" });
+	}
+</script>
 </body>
 </html>
 

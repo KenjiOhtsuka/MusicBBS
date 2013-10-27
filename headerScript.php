@@ -1,20 +1,13 @@
-<script type="text/x-mathjax-config">
-  MathJax.Hub.Config({
-    extensions: ["tex2jax.js"],
-    jax: ["input/TeX","output/HTML-CSS"],
-    tex2jax: {inlineMath: [["$","$"],["\\(","\\)"]],
-              displayMath: [ ['$$','$$'], ["\\[","\\]"]]}
-  });
-</script>
-<script type="text/javascript"
-  src="http://cdn.mathjax.org/mathjax/latest/MathJax.js">
-</script>
-<script type="text/javascript"
-  src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_full">
-</script>
 <?php
+  echo <<< EOT
+  <script type="text/javascript" src="js/jquery-1.9.1.js"></script>
+  <script type="text/javascript" src="js/abcjs_basic_1.5-min.js"></script>
+  <script type="text/javascript" src="js/abcjs_editor_1.5-min.js"></script>
+
+EOT;
+  
   if ($pattern == PageType::Unknown || $pattern == PageType::Comment ||
       $pattern == PageType::Board || $pattern == PageType::Topic) {
-    echo '  <script type="text/javascript" src="inputScript.js"></script>';
+    echo '  <script type="text/javascript" src="js/inputScript.js"></script>';
   }
 ?>

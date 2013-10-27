@@ -56,7 +56,7 @@ if (isset($_GET[GetParam::TopicId]) && ctype_digit($_GET[GetParam::TopicId])) {
     $input_type = InputType::TopicReply;
     $post_id = 0;
   }
-  $sqlForm = "SELECT title FROM BBSposts "
+  $sqlForm = "SELECT title FROM music_posts "
             ."WHERE topic_id = {$topic_id} AND id = {$post_id}";
   $rowsForm = mysql_query($sqlForm);
   if (!$rowsForm) {

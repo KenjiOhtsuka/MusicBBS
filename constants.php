@@ -42,13 +42,13 @@ class ConstText {
   const PasswordSalt = 'gd6GtpsO2hnyDVNUkungsdwL15';
   const Keywords = '楽譜,音楽,掲示板,教育,学習,練習,ABC記法';
   const Description = '楽譜の表示できる音楽掲示板。ABC記法を使って、楽譜を表示することができます。ぜひご活用ください。';
-  const URLPrefix = 'http://nippon.vacau.com/TeXBBS/';
+  const URLPrefix = 'http://nippon.vacau.com/ScoreBBS/';
 }
 
 function metaTags($title) {
   $code = '
   <meta charset="utf-8" />
-  <meta name="description" content="'.ConstText::Description'" />';
+  <meta name="description" content="'.ConstText::Description.'" />';
   if (isset($title)) {
     $code .= '
   <meta name="keywords" content="'.$title.','.ConstText::Keywords.'" />';
@@ -108,7 +108,9 @@ function createSocialLink($twitter_id = '', $mixi_id = '', $facebook_id = '', $t
   return $socialLink;
 }
 
-function createCommentHtml($topic_id, $post_id, $title, $writer, $twitter_id, $mixi_id, $facebook_id, $color = 'black', $message, $created, $modified) {
+function createCommentHtml($topic_id, $post_id, $title, $writer,
+  $twitter_id, $mixi_id, $facebook_id, $color = 'black', $message,
+  $created, $modified, $score = '') {
   if (!empty($modified)) {
     $datetime = $modified;
   } else {
@@ -122,12 +124,17 @@ function createCommentHtml($topic_id, $post_id, $title, $writer, $twitter_id, $m
   $html .= createSocialLink($twitter_id, $mixi_id, $facebook_id, $title, $topic_id, $post_id);
   $html .= "\n    </div>\n";
   $html .= "    <hr />\n";
+  if (!empty($score)) {
+    $html .= scoreViewHtml($topic_id, $post_id, $score);
+  }
   $html .= "    <div class=\"message\" style=\"color:{$color};\">{$message}</div>\n";
   $html .= "    <div class=\"footLink\"><a href=\"{$_SERVER['PHP_SELF']}?".GetParam::TopicId."={$topic_id}&".GetParam::PostId."={$post_id}&".GetParam::Mode."=".ModeType::Edit."\">編集</a>　<a href=\"{$_SERVER['PHP_SELF']}?".GetParam::TopicId."={$topic_id}&".GetParam::PostId."={$post_id}\">コメント</a></div>\n";
   $html .= "  </div>\n";
   return $html;
 }
-function createTopicHtml($topic_id, $title, $writer, $twitter_id, $mixi_id, $facebook_id, $color = 'black', $message, $created, $modified) {
+function createTopicHtml($topic_id, $title, $writer, $twitter_id, 
+  $mixi_id, $facebook_id, $color = 'black', $message, $created, $modified,
+  $score = '') {
   if (!empty($modified)) {
     $datetime = $modified;
   } else {
@@ -141,16 +148,19 @@ function createTopicHtml($topic_id, $title, $writer, $twitter_id, $mixi_id, $fac
   $html .= createSocialLink($twitter_id, $mixi_id, $facebook_id, $title, $topic_id);
   $html .= "\n  </div>\n";
   $html .= "  <hr />\n";
-  $html .= "  <div class=\"message\" style=\"color:{$color};\">{$message}</div>\n";
+  if (!empty($score)) {
+    $html .= scoreViewHtml($topic_id, 0, $score);
+  }
+  $html .= "  <div class=\"message\">{$message}</div>\n";
   $html .= "  <div class=\"footLink\"><a href=\"{$_SERVER['PHP_SELF']}?".GetParam::TopicId."={$topic_id}&".GetParam::Mode."=".ModeType::Edit."\">編集</a>　<a href=\"{$_SERVER['PHP_SELF']}?".GetParam::TopicId."={$topic_id}\">コメント</a></div>\n";
 //  $html .= "  <div class=\"footLink\"><a href=\"{$_SERVER['PHP_SELF']}?".GetParam::TopicId."={$topic_id}\">コメント</a></div>\n";
   $html .= "</div>\n";
   return $html;
 }
 function createIntroductionHtml($title, $twitter_id, $mixi_id, $facebook_id, $color = 'black', $message) {
-  $html = "<div class=\"topic\">";
+  $html = "<div class=\"topic\">\n";
   $html .= "  <h2><a href=\"training.php\">{$title}</a></h2>\n";
-  $html .= "  <div style=\"text-align:right;\">\n      ";
+  $html .= "  <div style=\"text-align:right;\">\n";
   $html .= createSocialLink($twitter_id, $mixi_id, $facebook_id, ConstText::BBStitle, '');
   $html .= "\n  </div>\n";
   $html .= "  <hr />\n";
@@ -159,44 +169,57 @@ function createIntroductionHtml($title, $twitter_id, $mixi_id, $facebook_id, $co
   return $html;
 }
 
-function outputForm($formAction, $title = '', $writer = '', $message = '', $color = '',
+function scoreViewHtml($topic_id, $post_id, $score) {
+  $html = "  <div id=\"toggle_score_{$topic_id}_{$post_id}\" class=\"slideButton\">Toggle Score</div>\n";
+  $html .= "  <div id=\"score{$topic_id}_{$post_id}\" class=\"scoreArea\">\n";
+  $html .= "    <textarea id=\"abcScore{$topic_id}_{$post_id}\" name=\"abcScore\" class=\"abcScore\" rows=\"10\" cols=\"200\" readonly=\"readonly\">\n";
+  $html .= $score;
+  $html .= "\n    </textarea>\n";
+  $html .= "  </div>\n";
+  $html .= "  <div id=\"notation{$topic_id}_{$post_id}\" name=\"notation\" class=\"notation\"></div>\n";
+  $html .= "  <div id=\"midi{$topic_id}_{$post_id}\" name=\"midi\" class=\"\"></div>\n";
+  $html .= "  <script>\n";
+  $html .= "    $('#toggle_score_{$topic_id}_{$post_id}').click(function(){\n";
+  $html .= "      $(\"#score{$topic_id}_{$post_id}\").slideToggle('slow');\n";
+  $html .= "    });\n";
+  $html .= "    var abcString = document.getElementById('abcScore{$topic_id}_{$post_id}').value;\n";
+  $html .= "    ABCJS.renderAbc(\"notation{$topic_id}_{$post_id}\", abcString, {}, {scale: 0.5}, {});\n";
+  $html .= "    ABCJS.renderMidi(\"midi{$topic_id}_{$post_id}\", abcString);\n";
+  $html .= "  </script>\n";
+  return $html;
+}
+
+function outputForm($formAction, $title = '', $writer = '', $message = '', $score = '',
                    $mixi_id = '', $twitter_id = '', $facebook_id = '', 
                    $topic_id = '', $post_id = '', $mode = ModeType::View) {
-  $blue_color = '';
-  $red_color = '';
-  $green_color = '';
-  switch ($color) {
-    case 'blue':
-      $blue_color = ' selected="selected"';    
-      break;
-    case 'red':
-      $red_color = ' selected="selected"';
-      break;
-    case 'green':
-      $green_color = ' selected="selected"';
-      break;
-    default:
-      break;
-  }
   $html = "
-  <div id=\"inputArea\">
-  <form action=\"{$formAction}\" method=\"POST\" name=\"MathPad\" id=\"MathPad\">
+  <div id=\"inputArea\" class=\"inputArea\">
+  <form action=\"{$formAction}\" method=\"POST\" name=\"ScorePad\" id=\"ScorePad\">
   <table>
   <tbody>
     <tr>
-      <td>タイトル</td>
+      <td><p>タイトル</p></td>
       <td colspan=\"4\"><input type=\"text\" id=\"title\" name=\"title\" maxlength=\"30\" value=\"{$title}\" required=\"required\" /></td>
     </tr>
     <tr>
-      <td>名前</td>
+      <td><p>名前</p></td>
       <td colspan=\"4\"><input type=\"text\" id=\"writer\" name=\"writer\" maxlength=\"20\" required=\"required\" value=\"{$writer}\" /></td>
     </tr>
     <tr>
-      <td>メッセージ</td>
+			<td>
+        <p>楽譜</p>
+      </td>
+			<td colspan=\"4\">
+			  <input type=\"button\" id=\"insertBase\" value=\"基本データを挿入する\" />
+			  <input type=\"button\" id=\"clearScore\" value=\"楽譜をクリアする\" />
+        <textarea rows=\"10\" cols=\"80\" id=\"abcScore\" name=\"abcScore\">{$score}</textarea>
+        <div id=\"warnings\"></div>
+      </td>
+    </tr>
+    <tr>
+      <td><p>メッセージ</p></td>
       <td colspan=\"4\">
-        <input type=\"button\" id=\"previewButton\" value=\"プレビュー\" />
-        <input type=\"checkbox\" id=\"isRealTime\" name=\"isRealTime\" value=\"1\" />リアルタイムプレビュー<br />
-        <textarea rows=\"10\" cols=\"60\" id=\"message\" name=\"message\" required=\"required\">{$message}</textarea>
+        <textarea rows=\"10\" cols=\"80\" id=\"message\" name=\"message\" required=\"required\">{$message}</textarea>
       </td>
     </tr>
     <tr>
@@ -222,25 +245,8 @@ function outputForm($formAction, $title = '', $writer = '', $message = '', $colo
       <td>
         <input type=\"text\" id=\"facebookID\" class=\"DirectInput\" name=\"facebookID\" maxlength=\"20\" placeholder=\"facebook の ID\" value=\"{$facebook_id}\" />
       </td>
-      <td>編集用パスワード</td>
+      <td><p>編集用パスワード</p></td>
       <td><input type=\"password\" id=\"password\" name=\"password\" style=\"ime-mode:disabled;\" maxlength=\"20\" /></td>
-    </tr>
-  <!--
-    <tr>
-      <td>WebSite</td>
-      <td colspan=\"4\"><input type=\"text\" id=\"URL\" /></td>
-    </tr>
-  -->
-    <tr>
-      <td>文字色</td>
-      <td colspan=\"4\">
-        <select name=\"color\" id=\"color\">
-          <option value=\"black\">黒</option>
-          <option value=\"blue\"{$blue_color}>青</option>
-          <option value=\"green\"{$green_color}>緑</option>
-          <option value=\"red\"{$red_color}>赤</option>
-        </select>
-      </td>
     </tr>
     <tr>
       <td></td>
@@ -259,7 +265,10 @@ function outputForm($formAction, $title = '', $writer = '', $message = '', $colo
   </div>
 
   <div id=\"Error\" style=\"color:red;\"></div>
-  <div id=\"MathOutput\"></div>
+  <div class=\"outputContainer\">
+    <div id=\"abcOutput\" class=\"abcOutput\"></div>
+    <div id=\"midi\"></div>
+  </div>
   <div id=\"overlay\" onclick=\"cancelOnClick();\"></div>
 
     <div id=\"PostStyle\">
