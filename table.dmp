@@ -58,6 +58,7 @@ DROP TABLE IF EXISTS `music_scores`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `music_scores` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `topic_id` bigint(20) unsigned NOT NULL,
   `post_id` bigint(20) unsigned NOT NULL DEFAULT '0',
   `score` text NOT NULL,
   `order` int unsigned NOT NULL DEFAULT '0',
