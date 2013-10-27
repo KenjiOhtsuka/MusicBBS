@@ -7,6 +7,4 @@ switch ($pattern) {
   case PageType::Summery:
 }
 
-
-
 ?>

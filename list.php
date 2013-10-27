@@ -38,7 +38,8 @@ switch ($pattern) {
                ."       GROUP BY postsB.topic_id) postsC "
                ."  ON postsC.topic_id = music_topics.id "
                ."LEFT JOIN music_scores ms "
-               ."  ON ms.post_id = postsA.id "
+               ."  ON ms.topic_id = postsA.topic_id "
+               ." AND ms.post_id = postsA.id "
                ."ORDER BY music_topics.updated DESC";
 
     $rowsHead = mysql_query($sqlHead, $myCon);
@@ -50,14 +51,16 @@ switch ($pattern) {
       echo createTopicHtml($rowHead['topic_id'], $rowHead['title'], $rowHead['writer'], 
                          $rowHead['twitter_id'], $rowHead['mixi_id'], $rowHead['facebook_id'], 
                          $rowHead['color'], nl2br($rowHead['message']), $rowHead['created'], $rowHead['modified'],
-                         $rowHead['score']);
+                         stripslashes($rowHead['score']));
 
       // sql to get comments
       $sqlPost = "SELECT mp.id post_id, mp.writer, mp.title, mp.message, mp.twitter_id,"
                 ."mp.mixi_id, mp.facebook_id, mp.url, mp.color, mp.created, mp.modified,"
                 ."ms.score ";
-      $sqlPost .= "FROM music_posts mp "
-                 ."LEFT JOIN music_scores ms ON ms.post_id = mp.id "
+      $sqlPost .= " FROM music_posts mp "
+                 ." LEFT JOIN music_scores ms \n"
+                 ."   ON ms.post_id = mp.id \n"
+                 ."  AND ms.topic_id = mp.topic_id "
                  ."WHERE mp.topic_id = {$rowHead['topic_id']} AND mp.id != 0 "
                  ."ORDER BY mp.id DESC LIMIT 0, ".(string)ConstParam::BoardTopicCommentCount;
       $rowsPost = mysql_query($sqlPost, $myCon);
@@ -69,7 +72,7 @@ switch ($pattern) {
         $html = createCommentHtml($rowHead['topic_id'], $rowPost['post_id'], $rowPost['title'], $rowPost['writer'], 
                                $rowPost['twitter_id'], $rowPost['mixi_id'], $rowPost['facebook_id'],
                                $rowPost['color'], nl2br($rowPost['message']), $rowPost['created'], $rowPost['modified'],
-                               $rowPost['score'])
+                               stripslashes($rowPost['score']))
               .$html;
       }
       if ($rowHead['id_count'] > ConstParam::BoardTopicCommentCount + 1) {
@@ -120,7 +123,9 @@ switch ($pattern) {
               ."mp.color, mp.created, mp.modified, ms.score ";
     $sqlHead .= "FROM music_topics mt "
                ."JOIN music_posts mp ON mp.topic_id = mt.id AND mp.id = 0 "
-               ."LEFT JOIN music_score ms ON ms.post_id = mp.id "
+               ." LEFT JOIN music_scores ms "
+               ."   ON ms.post_id = mp.id "
+               ."  AND ms.topic_id = mp.topic_id "
                ."WHERE mt.id = {$topic_id}";
     $rowsHead = mysql_query($sqlHead, $myCon);
     if (!$rowsHead) {
@@ -131,12 +136,14 @@ switch ($pattern) {
       echo createTopicHtml($topic_id, $rowHead['title'], $rowHead['writer'], 
                          $rowHead['twitter_id'], $rowHead['mixi_id'], $rowHead['facebook_id'], 
                          $rowHead['color'], nl2br($rowHead['message']), $rowHead['created'], $rowHead['modified'],
-                         nl2br($rowHead['score']));
+                         stripslashes($rowHead['score']));
       $sqlPost = "SELECT mp.id post_id, mp.writer, mp.title, mp.message, mp.twitter_id,"
                 ."mp.mixi_id, mp.facebook_id, mp.url, mp.color, mp.created, mp.modified,"
                 ."ms.score ";
       $sqlPost .= "FROM music_posts mp "
-                 ."LEFT JOIN music_scores ms ON ms.post_id = mp.id "
+                 ."LEFT JOIN music_scores ms \n"
+                 ."  ON ms.post_id = mp.id \n"
+                 ." AND ms.topic_id = mp.topic_id \n"
                  ."WHERE mp.topic_id = {$topic_id} AND mp.id != 0 "
                  ."ORDER BY mp.id DESC LIMIT 0, ".(string)ConstParam::TopicCommentCount;
       $rowsPost = mysql_query($sqlPost, $myCon);
@@ -150,7 +157,7 @@ switch ($pattern) {
         $html = createCommentHtml($rowHead['topic_id'], $rowPost['post_id'], $rowPost['title'], $rowPost['writer'], 
                                $rowPost['twitter_id'], $rowPost['mixi_id'], $rowPost['facebook_id'],
                                $rowPost['color'], nl2br($rowPost['message']), $rowPost['created'], $rowPost['modified'],
-                               nl2br($rowPost['score']))
+                               stripslashes($rowPost['score']))
                .$html;
       }
       echo $html;
@@ -214,7 +221,9 @@ switch ($pattern) {
               ."mp.mixi_id, mp.facebook_id, mp.url, mp.color, mp.created, mp.modified, ms.score ";
     $sqlHead .= "FROM music_topics mt "
                ."JOIN music_posts mp ON mp.topic_id = mt.id AND mp.id = 0 "
-               ."LEFT JOIN music_scores ms ON ms.post_id = ms.id "
+               ."LEFT JOIN music_scores ms "
+               ."  ON ms.post_id = mp.id "
+               ." AND ms.topic_id = mp.topic_id "
                ."WHERE mt.id = {$topic_id}";
 
     $rowsHead = mysql_query($sqlHead, $myCon);
@@ -228,12 +237,15 @@ switch ($pattern) {
       echo createTopicHtml($rowHead['topic_id'], $rowHead['title'], $rowHead['writer'], 
                          $rowHead['twitter_id'], $rowHead['mixi_id'], $rowHead['facebook_id'], 
                          $rowHead['color'], nl2br($rowHead['message']), $rowHead['created'], $rowHead['modified'],
-                         $rowHead['score']);
+                         stripslashes($rowHead['score']));
 
       $sqlPost = "SELECT mp.id post_id, mp.writer, mp.title, mp.message, mp.twitter_id,"
                 ."mp.mixi_id, mp.facebook_id, mp.url, mp.color, mp.created, mp.modified, ms.score ";
-      $sqlPost .= "FROM music_posts mp WHERE mp.topic_id = {$topic_id} AND mp.id != 0 "
-                 ."LEFT JOIN music_scores ms ON ms.post_id = mp.id "
+      $sqlPost .= "FROM music_posts mp "
+                 ."LEFT JOIN music_scores ms "
+                 ."  ON ms.post_id = mp.id "
+                 ." AND ms.topic_id = mp.topic_id "
+                 ."WHERE mp.topic_id = {$topic_id} AND mp.id != 0 "
                  ."ORDER BY mp.id DESC LIMIT {$n}, ".(string)ConstParam::TopicCommentCount;
       $rowsPost = mysql_query($sqlPost, $myCon);
       if (!$rowsPost) {
@@ -246,7 +258,7 @@ switch ($pattern) {
         $html = createCommentHtml($topic_id, $rowPost['post_id'], $rowPost['title'], $rowPost['writer'], 
                                $rowPost['twitter_id'], $rowPost['mixi_id'], $rowPost['facebook_id'],
                                $rowPost['color'], nl2br($rowPost['message']), $rowPost['created'], $rowPost['modified'],
-                               $rowPost['score'])
+                               stripslashes($rowPost['score']))
               .$html;
       }
       if ($post_id != 1) {
@@ -274,7 +286,7 @@ switch ($pattern) {
       die(mysql_error());
     }
     if ($rowHead = mysql_fetch_array($rowsHead)) {
-      if ($rowHead['id_count'] >= $page_number) {
+      if ($rowHead['id_count'] >= $page_number || $rowHead['id_count'] == 0) {
         $pager = createPager($page_number, $rowHead['id_count'], ConstParam::SummeryCount, ConstParam::Pager, GetParam::SummeryNumber);
       } else {
         $pager = "<p>トップページに戻ってやり直してください。</p>";
@@ -289,8 +301,7 @@ switch ($pattern) {
     $sqlHead = "SELECT mt.id, A.title title, count(B.id) - 1 posts_count, "
               ."mt.updated ";
     $sqlHead .= "FROM (SELECT id, updated FROM music_topics "
-               ."      ORDER BY updated DESC LIMIT ".(string)$n.", ".(string)ConstParam::SummeryCount.") "
-               ."music_topics mt "
+               ."      ORDER BY updated DESC LIMIT ".(string)$n.", ".(string)ConstParam::SummeryCount.") mt "
                ."JOIN music_posts A ON A.topic_id = mt.id AND A.id = 0 "
                ."JOIN music_posts B ON B.topic_id = mt.id ";
     $sqlHead .= "GROUP BY mt.id ORDER BY mt.updated DESC";

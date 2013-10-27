@@ -4,9 +4,10 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8" />
   <title><?php echo ConstText::BBStitle; ?></title>
 <?php
-  include('meta.php');
+//  include('meta.php');
   include('headerScript.php');
   include('css.php');
 ?>
